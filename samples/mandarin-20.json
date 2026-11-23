@@ -1,0 +1,162 @@
+[
+  {
+    "id": "tone-ma1",
+    "text": "妈",
+    "pinyin": "mā",
+    "meaning": "mẹ",
+    "kind": "tone",
+    "note": "Nghe riêng thanh 1."
+  },
+  {
+    "id": "tone-ma2",
+    "text": "麻",
+    "pinyin": "má",
+    "meaning": "gai dầu",
+    "kind": "tone",
+    "note": "Nghe riêng thanh 2."
+  },
+  {
+    "id": "tone-ma3",
+    "text": "马",
+    "pinyin": "mǎ",
+    "meaning": "ngựa",
+    "kind": "tone",
+    "note": "Kiểm tra đường thanh 3 khi đọc riêng."
+  },
+  {
+    "id": "tone-ma4",
+    "text": "骂",
+    "pinyin": "mà",
+    "meaning": "mắng",
+    "kind": "tone",
+    "note": "Nghe riêng thanh 4."
+  },
+  {
+    "id": "vocab-nihao",
+    "text": "你好",
+    "pinyin": "nǐ hǎo",
+    "meaning": "xin chào",
+    "kind": "word",
+    "note": "Có biến điệu thanh 3 trong lời nói."
+  },
+  {
+    "id": "vocab-xuexi",
+    "text": "学习",
+    "pinyin": "xuéxí",
+    "meaning": "học tập",
+    "kind": "word",
+    "note": ""
+  },
+  {
+    "id": "vocab-xuesheng",
+    "text": "学生",
+    "pinyin": "xuésheng",
+    "meaning": "học sinh",
+    "kind": "word",
+    "note": "Kiểm tra khinh thanh."
+  },
+  {
+    "id": "vocab-nv",
+    "text": "女",
+    "pinyin": "nǚ",
+    "meaning": "nữ",
+    "kind": "word",
+    "note": "Kiểm tra ü, không đọc thành u."
+  },
+  {
+    "id": "vocab-lv",
+    "text": "绿",
+    "pinyin": "lǜ",
+    "meaning": "xanh lá",
+    "kind": "word",
+    "note": "Kiểm tra ü."
+  },
+  {
+    "id": "vocab-liu",
+    "text": "六",
+    "pinyin": "liù",
+    "meaning": "sáu",
+    "kind": "word",
+    "note": "Kiểm tra iu."
+  },
+  {
+    "id": "vocab-shui",
+    "text": "水",
+    "pinyin": "shuǐ",
+    "meaning": "nước",
+    "kind": "word",
+    "note": "Kiểm tra ui."
+  },
+  {
+    "id": "reading-bank",
+    "text": "银行",
+    "pinyin": "yínháng",
+    "meaning": "ngân hàng",
+    "kind": "polyphone",
+    "note": "行 đọc háng."
+  },
+  {
+    "id": "reading-walk",
+    "text": "行走",
+    "pinyin": "xíngzǒu",
+    "meaning": "đi lại",
+    "kind": "polyphone",
+    "note": "行 đọc xíng."
+  },
+  {
+    "id": "reading-music",
+    "text": "音乐",
+    "pinyin": "yīnyuè",
+    "meaning": "âm nhạc",
+    "kind": "polyphone",
+    "note": "乐 đọc yuè."
+  },
+  {
+    "id": "sentence-student",
+    "text": "我是学生。",
+    "pinyin": "Wǒ shì xuésheng.",
+    "meaning": "Tôi là học sinh.",
+    "kind": "sentence",
+    "note": ""
+  },
+  {
+    "id": "sentence-chinese",
+    "text": "我喜欢学习中文。",
+    "pinyin": "Wǒ xǐhuan xuéxí Zhōngwén.",
+    "meaning": "Tôi thích học tiếng Trung.",
+    "kind": "sentence",
+    "note": ""
+  },
+  {
+    "id": "sentence-tea",
+    "text": "你想喝水还是喝茶？",
+    "pinyin": "Nǐ xiǎng hē shuǐ háishi hē chá?",
+    "meaning": "Bạn muốn uống nước hay trà?",
+    "kind": "sentence",
+    "note": ""
+  },
+  {
+    "id": "radical-water",
+    "text": "三点水",
+    "pinyin": "sān diǎn shuǐ",
+    "meaning": "tên bộ 氵",
+    "kind": "radical",
+    "note": "Đọc tên bộ, không gửi ký hiệu 氵 để đoán cách đọc."
+  },
+  {
+    "id": "radical-person",
+    "text": "单人旁",
+    "pinyin": "dān rén páng",
+    "meaning": "tên bộ 亻",
+    "kind": "radical",
+    "note": ""
+  },
+  {
+    "id": "radical-heart",
+    "text": "竖心旁",
+    "pinyin": "shù xīn páng",
+    "meaning": "tên bộ 忄",
+    "kind": "radical",
+    "note": ""
+  }
+]
