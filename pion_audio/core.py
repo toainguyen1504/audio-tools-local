@@ -15,6 +15,7 @@ MODEL_DIR = ROOT / "models" / "kokoro-zh"
 OUTPUT = ROOT / "output"
 SAMPLES = ROOT / "samples" / "mandarin-20.json"
 DEFAULT_VOICES = {"kokoro": "zf_001", "melo": "ZH"}
+SPEEDS = (0.5, 0.75, 0.85, 1.0, 1.25, 1.5)
 
 
 @contextmanager
@@ -96,10 +97,12 @@ def sha256_file(path):
 def profile_for(engine, voice, speed, model_dir=MODEL_DIR):
     if engine not in DEFAULT_VOICES:
         raise ValueError("Model không hợp lệ.")
-    if not isinstance(speed, (float, int)) or not math.isfinite(speed) or not 0.6 <= speed <= 1.3:
-        raise ValueError("Tốc độ cần trong khoảng 0.6–1.3.")
+    if not isinstance(speed, (float, int)) or not math.isfinite(speed) or speed not in SPEEDS:
+        raise ValueError("Tốc độ hợp lệ: 0.5, 0.75, 0.85, 1.0, 1.25, 1.5.")
     if not isinstance(voice, str) or not re.fullmatch(r"[A-Za-z0-9_]{1,60}", voice):
         raise ValueError("Tên giọng không hợp lệ.")
+    from .catalog import validate_voice
+    validate_voice(engine, voice, model_dir)
     from importlib.metadata import version
     packages = ("kokoro-onnx", "misaki-fork") if engine == "kokoro" else ("MeloTTS", "torch")
     profile = {"engine": engine, "voice": voice, "speed": float(speed), "pipeline": 1,
@@ -108,11 +111,11 @@ def profile_for(engine, voice, speed, model_dir=MODEL_DIR):
         profile["assets"] = {name: sha256_file(model_dir / name) for name in
                              ("kokoro-v1.1-zh.onnx", "voices-v1.1-zh.bin", "config.json")}
     else:
-        from huggingface_hub import hf_hub_download
+        from .catalog import model_assets
         profile["model"] = "myshell-ai/MeloTTS-Chinese"
         profile["source_revision"] = "209145371cff8fc3bd60d7be902ea69cbdb7965a"
-        profile["assets"] = {name: sha256_file(hf_hub_download(profile["model"], filename=name))
-                             for name in ("checkpoint.pth", "config.json")}
+        profile["assets"] = {name: sha256_file(path) for name, path in
+                             model_assets(engine, model_dir, local_only=False).items()}
     return profile
 
 
@@ -170,7 +173,7 @@ def run_batch(items, profile, output, engine_factory, stopped=lambda: False):
                     temporary.unlink(missing_ok=True)
                 reused = False
             row.update(info, status="ready", file="audio/" + target.name,
-                       reused=reused, review=cached.get("review", "pending"),
+                       reused=reused, review=cached.get("review", "pending") if reused else "pending",
                        seconds=round(time.monotonic() - started, 3))
         except Exception as error:
             row.update(status="error", error=str(error)[:1000])

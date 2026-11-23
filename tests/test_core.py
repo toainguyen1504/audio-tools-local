@@ -2,6 +2,8 @@ import json
 import tempfile
 import unittest
 import wave
+import contextlib
+import io
 from pathlib import Path
 
 from pion_audio.core import atomic_json, fingerprint, load_items, output_lock, run_batch, validate_items, wav_info
@@ -24,6 +26,9 @@ class FakeEngine:
 
 class CoreTests(unittest.TestCase):
     def setUp(self):
+        self.console = contextlib.redirect_stdout(io.StringIO())
+        self.console.__enter__()
+        self.addCleanup(self.console.__exit__, None, None, None)
         self.tmp = tempfile.TemporaryDirectory()
         self.addCleanup(self.tmp.cleanup)
         self.output = Path(self.tmp.name)

@@ -1,4 +1,7 @@
 $ErrorActionPreference = 'Stop'
 Set-Location (Split-Path $PSScriptRoot -Parent)
 $env:PYTHONUTF8 = '1'
-py -3.12 -m pion_audio.server
+if (-not (Test-Path '.venv-kokoro/Scripts/python.exe')) {
+    throw 'Chua cai Kokoro. Chay scripts/setup-kokoro.ps1 truoc.'
+}
+& '.venv-kokoro/Scripts/python.exe' -X utf8 -m pion_audio.server

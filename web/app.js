@@ -1,5 +1,32 @@
 const $ = id => document.getElementById(id);
 let current = null, customItems = null, signature = '', polling = false, pageNumber = 0;
+let preferences = {engine:'kokoro', voices:{kokoro:'zf_001',melo:'ZH'},speed:1};
+try {
+  const saved=JSON.parse(localStorage.getItem('pion-audio-settings')||'{}');
+  if(['kokoro','melo'].includes(saved.engine))preferences.engine=saved.engine;
+  if([0.5,0.75,0.85,1,1.25,1.5].includes(saved.speed))preferences.speed=saved.speed;
+  if(saved.voices&&typeof saved.voices==='object')preferences.voices={...preferences.voices,...saved.voices};
+} catch { /* Storage is optional. */ }
+$('engine').value=preferences.engine;$('speed').value=String(preferences.speed);
+function remember(){
+  preferences.engine=$('engine').value;preferences.speed=Number($('speed').value);
+  if($('voice').value)preferences.voices[preferences.engine]=$('voice').value;
+  try{localStorage.setItem('pion-audio-settings',JSON.stringify(preferences));}catch{}
+}
+function syncVoice(data){
+  const engine=$('engine').value,info=data.engines[engine],ids=info.voices||[];
+  const optionsKey=JSON.stringify([engine,ids]);
+  if($('voice').dataset.optionsKey!==optionsKey){
+    $('voice').replaceChildren();
+    if(!ids.length){const option=el('option',info.checking?'Đang kiểm tra…':'Chưa có danh sách giọng');option.value='';$('voice').append(option);}
+    for(const id of ids){const option=el('option',id+(id===info.default_voice?' · mặc định':''));option.value=id;$('voice').append(option);}
+    const remembered=preferences.voices[engine];
+    $('voice').value=ids.includes(remembered)?remembered:(ids.includes(info.default_voice)?info.default_voice:'');
+    $('voice').dataset.optionsKey=optionsKey;
+  }
+}
+function selectionPayload(){return {engine:$('engine').value,voice:$('voice').value,speed:Number($('speed').value)};}
+
 const labels = {running:'Đang tạo', stopped:'Đã dừng', completed:'Đã tạo xong', completed_with_errors:'Hoàn tất, có mục lỗi',failed:'Không nạp được model — xem nhật ký'};
 function el(tag, text, cls) { const node=document.createElement(tag); if(text!==undefined)node.textContent=text; if(cls)node.className=cls; return node; }
 async function post(path, data) {
@@ -17,7 +44,7 @@ function cell(engine, row, running){
   for(const [value,label] of [['approved','Đạt'],['rejected','Cần thay'],['pending','Để sau']]){
     const button=el('button',label,`${value==='rejected'?'reject ':''}${row.review===value?'active':''}`);
     button.disabled=running;
-    button.onclick=async()=>{try{await post('/api/review',{engine,id:row.id,review:value});await refresh();}catch(e){notify(e.message);}};
+    button.onclick=async()=>{try{await post('/api/review',{engine,id:row.id,fingerprint:row.fingerprint,review:value});await refresh();}catch(e){notify(e.message);}};
     actions.append(button);
   }
   td.append(actions);return td;
@@ -25,7 +52,28 @@ function cell(engine, row, running){
 function render(data){
   const selected=$('engine').value, chosen=data.engines[selected];
   const anyRunning=Object.values(data.engines).some(e=>e.running);
-  $('start').disabled=anyRunning||!chosen.installed||!chosen.assets_ready;
+  syncVoice(data);
+  const canGenerate=chosen.ready&&Boolean($('voice').value);
+  $('engine').disabled=anyRunning;$('voice').disabled=anyRunning||!(chosen.voices||[]).length;$('speed').disabled=anyRunning;
+  $('start').disabled=anyRunning||!canGenerate;
+  $('preview').disabled=anyRunning||!canGenerate;
+  $('prepare').disabled=anyRunning||!chosen.dependencies_ready;
+  $('check').disabled=anyRunning||chosen.checking;
+  $('readiness').textContent=chosen.checking?'Đang kiểm tra môi trường…':(chosen.message||'Đang kiểm tra…');
+  const existing=chosen.manifest.items||[],errors=existing.filter(r=>r.status==='error').length;
+  $('retry').disabled=anyRunning||!canGenerate||!errors||!chosen.has_input;
+  $('resume').disabled=anyRunning||!canGenerate||!chosen.has_input||!['stopped','failed','running','completed_with_errors'].includes(chosen.manifest.status);
+  $('export').disabled=anyRunning||!existing.some(r=>r.status==='ready');
+  const preview=chosen.preview||{},sample=(preview.items||[]).find(r=>r.status==='ready');
+  const previewKey=sample?sample.fingerprint:'';
+  if($('preview-result').dataset.key!==previewKey){
+    $('preview-result').replaceChildren();$('preview-result').dataset.key=previewKey;
+    if(sample){
+      $('preview-result').append(el('div',`${sample.text} · ${preview.profile.voice} · tốc độ ${preview.profile.speed}`,'meta'));
+      const player=el('audio');player.controls=true;player.preload='none';player.src=`/preview/${selected}/${sample.fingerprint}.wav`;$('preview-result').append(player);
+    }
+  }
+
   $('stop').disabled=!chosen.running;
   $('start').textContent=`Tạo / tiếp tục ${(customItems||data.samples).length} mẫu`;
   $('manifest').href=`/api/manifest/${selected}`;$('manifest').download=`manifest-${selected}.json`;
@@ -35,12 +83,15 @@ function render(data){
     const m=s.manifest, rows=m.items||[],ready=rows.filter(r=>r.status==='ready').length,errors=rows.filter(r=>r.status==='error').length;
     const box=el('div',undefined,'meter');box.append(el('strong',name==='kokoro'?'Kokoro':'MeloTTS'));
     let status=s.running?'Đang xử lý…':(labels[m.status]||'Chưa chạy');
-    if(!s.installed) status='Chưa cài — xem README';else if(!s.assets_ready)status='Chưa tải model — chạy setup-kokoro';
+    if(s.running&&s.operation==='prepare')status='Đang tải / chuẩn bị dữ liệu giọng…';
+    else if(s.running&&s.operation==='preview')status='Đang tạo mẫu nghe thử…';
+    else if(!s.ready&&!s.running)status=s.message||'Đang kiểm tra môi trường…';
     if(s.exit_code!==null&&s.exit_code!==0)status='Có lỗi — xem nhật ký';
     if(!s.running&&m.status==='running')status='Bị gián đoạn — nhấn tiếp tục';
     box.append(el('div',`${status} · ${ready}/${m.total||0} audio · ${errors} lỗi`));
     const progress=el('progress');progress.max=m.total||1;progress.value=rows.length;box.append(progress);
     if(m.profile)box.append(el('div',`${m.profile.voice} · tốc độ ${m.profile.speed}`,'meta'));
+    $('head-'+name).textContent=(name==='kokoro'?'Kokoro':'MeloTTS')+(m.profile?` · ${m.profile.voice} / ${m.profile.speed}`:'');
     $('progress').append(box);
   }
   const nextSignature=JSON.stringify([pageNumber,customItems||data.samples,Object.values(data.engines).map(e=>[e.running,e.manifest])]);
@@ -68,8 +119,28 @@ function render(data){
   $('samples').replaceChildren(fragment);
 }
 async function refresh(){if(polling)return;polling=true;try{const r=await fetch('/api/state');if(!r.ok)throw new Error('Không kết nối được công cụ local.');current=await r.json();render(current);}catch(e){notify(e.message);}finally{polling=false;}}
-$('engine').onchange=()=>{$('voice').value=$('engine').value==='kokoro'?'zf_001':'ZH';if(current)render(current);};
-$('start').onclick=async()=>{notify('');try{await post('/api/start',{engine:$('engine').value,voice:$('voice').value,speed:Number($('speed').value),items:customItems||current.samples});await refresh();}catch(e){notify(e.message);}};
+$('engine').onchange=()=>{preferences.engine=$('engine').value;if(current)render(current);remember();};
+$('voice').onchange=remember;$('speed').onchange=remember;
+$('start').onclick=async()=>{notify('');try{await post('/api/start',{...selectionPayload(),items:customItems||current.samples});await refresh();}catch(e){notify(e.message);}};
+for(const action of ['prepare','preview','retry','resume','check']){
+  $(action).onclick=async()=>{notify('');try{
+    const payload={...selectionPayload(),text:$('preview-text').value};
+    await post('/api/'+action,payload);
+    notify(action==='prepare'?'Đang chuẩn bị. Lần đầu có thể tải thêm dữ liệu, xem Nhật ký xử lý.':action==='preview'?'Đang tạo mẫu nghe thử…':action==='retry'?'Thử lại đợt trước: giữ nguyên cấu hình và dùng lại file đã có.':'');
+    await refresh();
+  }catch(e){notify(e.message);}};
+}
+$('export').onclick=async()=>{
+  const button=$('export');button.disabled=true;notify('Đang đóng gói kết quả…');
+  try{
+    const name=$('engine').value;
+    const response=await fetch(`/api/export/${name}?approved=${$('approved-only').checked?'1':'0'}`);
+    if(!response.ok)throw new Error((await response.json()).error);
+    const url=URL.createObjectURL(await response.blob()),link=el('a');
+    link.href=url;link.download=`pion-${name}-audio.zip`;document.body.append(link);link.click();link.remove();setTimeout(()=>URL.revokeObjectURL(url),30000);
+    notify('Đã xuất gói audio và bảng ánh xạ ID.');
+  }catch(e){notify(e.message);}finally{button.disabled=false;}
+};
 $('stop').onclick=async()=>{try{await post('/api/stop',{engine:$('engine').value});notify('Sẽ dừng sau mẫu đang xử lý.');}catch(e){notify(e.message);}};
 $('import').onchange=async(event)=>{try{
   const file=event.target.files[0];if(!file)return;if(file.size>8*1024*1024)throw new Error('File tối đa 8 MB.');

@@ -1,8 +1,8 @@
-.venv*/
+.venv*
 __pycache__/
 *.pyc
-models/
-output/
+models
+output
 .env
 .DS_Store
 *.log

@@ -1,20 +1,30 @@
 # Kiểm tra bản local
 
-Ngày: 23/11/2026. Môi trường thực hiện: Linux x86_64. Chưa chạy trực tiếp trên Windows của người dùng.
+Ngày 23/11/2026, Linux x86_64. Chưa thực thi PowerShell/CMD trực tiếp trên Windows.
 
-## Đã kiểm tra
+## Đã đạt
 
-- 19 test Python: validation đầu vào, cache theo nội dung/cách đọc/giọng/tốc độ, WAV bị hỏng, tiếp tục batch, dừng, lỗi từng mục, model không nạp được, khóa tiến trình, duyệt và HTTP loopback.
-- `node --check web/app.js`: đạt.
-- DOM smoke bằng jsdom: hiển thị 20 dòng và 20 audio controls, duyệt mẫu, phân trang danh sách 123 mục (50/50/23), từ chối mục JSON không hợp lệ. Đây không phải kiểm tra giao diện bằng trình duyệt thật.
-- Kokoro model thật `v1.1-zh`, giọng `zf_001`, tốc độ 1.0: tạo thành công **20/20 WAV PCM 16-bit**, mẫu số hữu hạn và có tín hiệu âm thanh. Tổng độ dài 17,686 giây (không phải thời gian xử lý).
-- Gọi HTTP `/api/start` thực tế từ local server → subprocess worker → manifest: hoàn tất, dùng lại **20/20** file Kokoro đã có, exit code 0.
-- MeloTTS checkpoint thật `myshell-ai/MeloTTS-Chinese`, giọng `ZH`, PyTorch 2.5.1 CPU trên Python 3.10: tạo thành công **20/20 WAV**, exit code 0. Đã cài UniDic đầy đủ trước khi nạp model.
-- Trong môi trường kiểm tra, NLTK downloader từ chối proxy theo cơ chế bảo vệ của NLTK. Đã lấy các gói dữ liệu cố định từ repo chính thức `nltk/nltk_data`, giải nén local và dùng `NLTK_DATA`; không tắt cơ chế bảo vệ. Script Windows dùng downloader thông thường, dừng và báo lỗi nếu tải không được.
+- **34 test Python:** dữ liệu đầu vào, giới hạn tốc độ, giọng lấy từ model, cache, dừng/tiếp tục, thử lại, duyệt, lỗi khởi tạo và ZIP theo ID.
+- **UI smoke (jsdom):** 5 giọng Kokoro / ZH, mặc định an toàn, nhớ lựa chọn, 6 tốc độ, nghe thử, duyệt, khóa thao tác khi đang chạy, phân trang 123 mục và từ chối JSON lỗi. Không phải kiểm tra hình ảnh bằng trình duyệt thật.
+- `node --check web/app.js` và `git diff --check`: đạt.
+- Model thật: Kokoro `v1.1-zh` và MeloTTS-Chinese đã tạo 20/20 mẫu trong vòng kiểm tra đầu. Vòng này đã kiểm tra cả 6 tốc độ trên hai model và tạo thêm mẫu bằng cả 5 giọng Kokoro được đưa vào dropdown.
+- Độ dài cùng câu ở tốc độ 0.5 / 1.5: Kokoro **4,536 / 1,536 giây**, MeloTTS **3,281 / 1,276 giây**. Đây là độ dài audio, không phải thời gian xử lý.
+- **HTTP + worker thật:** chuẩn bị Melo, nghe thử hai model, tạo batch, duyệt, xuất ZIP chỉ mẫu đạt / toàn bộ, thử lại 1 file lỗi trong 3 file và dùng lại 2 file còn tốt; giữ duyệt cho file dùng lại, lưu bảng kết quả cũ trong history.
 
-## Phạm vi
+## Chạy lại
 
-- Thành công kỹ thuật không xác nhận phát âm đúng về mặt sư phạm. Tất cả mẫu mới vẫn `pending` để người dùng nghe duyệt.
-- Chưa kiểm tra tốc độ trên máy Windows, chưa benchmark hàng nghìn mục, chưa nối CMS/R2/Learning app.
-- Không tạo CI/CD, không gọi dịch vụ TTS trả phí.
-- Model và output bị loại khỏi Git; script setup tải model từ upstream trên máy người dùng.
+```bash
+python -m unittest discover -s tests -v
+.venv-kokoro/bin/python -m tests.model_smoke --engine kokoro
+.venv-melo/bin/python -m tests.model_smoke --engine melo
+python -m tests.http_model_smoke
+```
+
+Hai lệnh smoke model cần thư viện/model đã cài; HTTP smoke cần cả hai môi trường và Melo đã chuẩn bị. Chúng tạo dữ liệu thử trong output. UI smoke cần Node + jsdom: `node tests/ui-smoke.cjs /duong-dan/toi/jsdom`.
+
+## Giới hạn
+
+- Thành công kỹ thuật không xác nhận phát âm đúng về mặt sư phạm. Mẫu mới vẫn chờ người dùng nghe duyệt.
+- Chưa benchmark hàng nghìn mục, chưa nối CMS/R2/Learning app, chưa kiểm tra thao tác và giao diện trên máy Windows của người dùng.
+- Trong môi trường kiểm tra, NLTK downloader từ chối proxy. Dữ liệu được lấy từ repo chính thức nltk/nltk_data và dùng local, không tắt cơ chế bảo vệ. Script Windows dùng downloader thông thường và dừng nếu tải lỗi.
+- Không tạo CI/CD, không gọi API TTS trả phí. Model, môi trường Python và output không nằm trong Git.

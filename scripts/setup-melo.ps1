@@ -1,13 +1,15 @@
 $ErrorActionPreference = 'Stop'
 Set-Location (Split-Path $PSScriptRoot -Parent)
-function Check-Exit { if ($LASTEXITCODE -ne 0) { throw 'Lenh that bai. Xem loi o tren va thu lai.' } }
-py -3.10 -c "import struct; assert struct.calcsize('P') == 8, 'Can Python x64'"
-Check-Exit
+. "$PSScriptRoot/common.ps1"
+$env:PYTHONUTF8 = '1'
+if (-not (Get-Command git -ErrorAction SilentlyContinue)) { throw 'Can cai Git truoc.' }
 if (-not (Test-Path '.venv-melo/Scripts/python.exe')) {
-    py -3.10 -m venv .venv-melo
+    $basePython = Find-Python @('3.10')
+    & $basePython -m venv .venv-melo
     Check-Exit
 }
 $python = '.venv-melo/Scripts/python.exe'
+Check-Venv $python @('3.10')
 & $python -m pip install --upgrade pip 'setuptools<81' wheel
 Check-Exit
 & $python -m pip install torch==2.5.1 torchaudio==2.5.1 --index-url https://download.pytorch.org/whl/cpu

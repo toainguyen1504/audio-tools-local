@@ -1,15 +1,17 @@
 <!doctype html>
 <html lang="vi"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Pion · Audio Tools</title><link rel="stylesheet" href="/style.css"></head>
 <body><main>
-<header><div><p class="eyebrow">PION · CÔNG CỤ NỘI BỘ</p><h1>Audio tiếng Trung</h1><p>Tạo cùng bộ mẫu để chọn giọng đọc phù hợp với HSK.</p></div><span class="badge">Chạy local</span></header>
+<header><div><p class="eyebrow">PION · CÔNG CỤ NỘI BỘ</p><h1>Audio tiếng Trung</h1><p>Chọn giọng, nghe thử và tạo audio theo lô.</p></div><span class="badge">Chạy local</span></header>
 <section class="panel controls"><div class="fields">
 <label>Model<select id="engine"><option value="kokoro">Kokoro · tiếng Trung</option><option value="melo">MeloTTS · tiếng Trung</option></select></label>
-<label>Giọng<input id="voice" value="zf_001" maxlength="60" spellcheck="false"></label>
-<label>Tốc độ<select id="speed"><option value="0.85">Chậm · 0.85</option><option value="1" selected>Bình thường · 1.0</option><option value="1.1">Nhanh · 1.1</option></select></label>
-</div><div class="actions"><button id="start">Tạo 20 mẫu</button><button id="stop" class="secondary">Dừng sau mẫu hiện tại</button><label class="file secondary">Chọn danh sách JSON<input id="import" type="file" accept=".json,application/json"></label><button id="reset" class="secondary">Dùng bộ mẫu</button></div>
-<p id="selection" class="small">Bộ mẫu mặc định · 20 mục</p><p class="small">Pinyin dùng để đối chiếu, chưa ép cách đọc. Kiểm tra từ đa âm, thanh điệu và tên bộ thủ trước khi duyệt.</p><p id="notice" role="status" aria-live="polite"></p>
+<label>Giọng<select id="voice" disabled><option value="">Đang kiểm tra model…</option></select></label>
+<label>Tốc độ<select id="speed"><option value="0.5">Rất chậm · 0.5</option><option value="0.75">Chậm · 0.75</option><option value="0.85">Hơi chậm · 0.85</option><option value="1" selected>Bình thường · 1.0</option><option value="1.25">Nhanh · 1.25</option><option value="1.5">Rất nhanh · 1.5</option></select></label>
+</div><div class="actions"><button id="prepare" class="secondary">Chuẩn bị model</button><button id="check" class="secondary">Kiểm tra lại</button><span id="readiness" class="small" role="status"></span></div>
+<div class="preview-area"><label>Câu nghe thử<input id="preview-text" value="我喜欢学习中文。" maxlength="300"></label><button id="preview" class="secondary">Tạo mẫu nghe thử</button><div id="preview-result"></div></div>
+<div class="actions"><button id="start">Tạo 20 mẫu</button><button id="resume" class="secondary">Tiếp tục đợt trước</button><button id="retry" class="secondary">Thử lại mục lỗi</button><button id="stop" class="secondary">Dừng sau mẫu hiện tại</button><label class="file secondary">Chọn danh sách JSON<input id="import" type="file" accept=".json,application/json"></label><button id="reset" class="secondary">Dùng bộ mẫu</button></div>
+<p id="selection" class="small">Bộ mẫu mặc định · 20 mục</p><p class="small">Pinyin dùng để đối chiếu, chưa ép cách đọc. Kiểm tra từ đa âm và thanh điệu trước khi duyệt. Tốc độ 0.5/1.5 có thể kém tự nhiên.</p><p id="notice" role="status" aria-live="polite"></p>
 </section>
-<section class="panel"><div class="section-head"><h2>Tiến độ</h2><a id="manifest" href="/api/manifest/kokoro" download="manifest-kokoro.json">Tải bảng kết quả</a></div><div id="progress"></div><details><summary>Nhật ký xử lý</summary><pre id="log"></pre></details></section>
-<section><div class="section-head"><h2>Nghe đối chiếu</h2><span class="small">Duyệt riêng từng model và giọng</span></div><div class="table-wrap"><table><thead><tr><th>Nội dung</th><th>Kokoro</th><th>MeloTTS</th></tr></thead><tbody id="samples"></tbody></table></div><div class="actions pagination"><button id="previous" class="secondary">Trang trước</button><span id="page" class="small"></span><button id="next" class="secondary">Trang sau</button></div></section>
-<footer>File được lưu trong thư mục output. Bản này thử và duyệt giọng local; chưa kết nối CMS hoặc R2.</footer>
+<section class="panel"><div class="section-head"><h2>Tiến độ</h2><a id="manifest" href="/api/manifest/kokoro" download="manifest-kokoro.json">Tải bảng kết quả</a></div><div id="progress"></div><details><summary>Nhật ký xử lý</summary><pre id="log"></pre></details><div class="actions export-area"><label><input id="approved-only" type="checkbox" checked> Chỉ xuất mẫu đã duyệt</label><button id="export" class="secondary">Xuất ZIP audio + ID</button></div></section>
+<section><div class="section-head"><h2>Nghe đối chiếu</h2><span class="small">Duyệt riêng từng model và giọng</span></div><div class="table-wrap"><table><thead><tr><th>Nội dung</th><th id="head-kokoro">Kokoro</th><th id="head-melo">MeloTTS</th></tr></thead><tbody id="samples"></tbody></table></div><div class="actions pagination"><button id="previous" class="secondary">Trang trước</button><span id="page" class="small"></span><button id="next" class="secondary">Trang sau</button></div></section>
+<footer>File lưu trong output. Chưa kết nối CMS hoặc R2.</footer>
 </main><script src="/app.js"></script></body></html>
