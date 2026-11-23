@@ -2,37 +2,148 @@
 
 Công cụ nội bộ tạo và nghe đối chiếu audio tiếng Trung bằng **Kokoro v1.1-zh** và **MeloTTS**. Chạy trên máy của người nhập liệu, không dùng API TTS trả phí.
 
-## Bắt đầu trên Windows
+## Bắt đầu trên Windows — thử Kokoro trước
 
-### 1. Chuẩn bị
+Các lệnh dưới đây chạy trong **Terminal của VS Code**, bằng PowerShell hoặc CMD. Chạy **từng lệnh**, chờ hoàn tất rồi mới sang lệnh tiếp theo; nếu có lỗi thì dừng tại bước đó.
 
-- Cài **Python 3.12 x64** từ https://www.python.org/downloads/ (cho Kokoro và giao diện).
-- Cài Git: https://git-scm.com/downloads/win.
-- Nếu muốn thử MeloTTS, cài thêm **Python 3.10 x64**. Hai model dùng môi trường riêng, không cài chung thư viện.
-- Không dùng Python 32-bit hoặc Python 3.14 cho các lệnh dưới đây.
+### 1. Mở đúng thư mục dự án
 
-Mở PowerShell, chạy:
+Nếu đã clone và mở `audio-tools-local` trong VS Code, chọn **Terminal → New Terminal**, không cần clone lại. Terminal phải đang ở thư mục chứa `README.md`, `pion_audio` và `requirements`, ví dụ:
+
+```powershell
+cd C:\SPACE_WEB\audio-tools-local
+```
+
+Nếu chưa có dự án, cài [Git](https://git-scm.com/downloads/win), rồi chạy:
 
 ```powershell
 git clone https://github.com/toainguyen1504/audio-tools-local.git
 cd audio-tools-local
+```
+
+### 2. Kiểm tra Python đang có
+
+```powershell
 py -0p
+py --version
+```
+
+- `py -0p` liệt kê các phiên bản Python và đường dẫn đã cài.
+- `py --version` hoặc `python --version` hiển thị phiên bản mặc định. Không dùng `py -version` hoặc `python -v`: `-v` bật nhật ký import và mở trình Python tương tác.
+- Nếu đang thấy dấu `>>>`, nhập `exit()` rồi Enter để quay lại terminal trước khi chạy các lệnh cài.
+
+**Nếu máy đã có Python 3.11 x64, có thể dùng phiên bản này để thử Kokoro, chưa cần cài thêm Python 3.12.** Các lệnh chính bên dưới dùng 3.11. Nếu dùng Python 3.12 x64, thay các lệnh `py -3.11` bằng `py -3.12` khi kiểm tra và tạo môi trường; các lệnh gọi `.venv-kokoro` giữ nguyên.
+
+Kiểm tra đúng phiên bản và kiến trúc:
+
+```powershell
+py -3.11 -c "import sys, struct; print(sys.version); print('Architecture:', struct.calcsize('P') * 8, 'bit')"
+```
+
+Kết quả cần có Python **3.11.x** và **64 bit**. Bản model thật trong môi trường phát triển đã được kiểm tra với Python 3.12 trên Linux; việc cài và chạy trên Windows cần kiểm tra trên máy người dùng, xem [VALIDATION.md](VALIDATION.md).
+
+Nếu chưa có 3.11 hoặc 3.12 x64, cài một trong hai từ [python.org](https://www.python.org/downloads/windows/), chọn **Windows installer (64-bit)** và tích **Add python.exe to PATH**. Sau khi cài, mở lại VS Code và kiểm tra lại. Không dùng Python 32-bit hoặc 3.14 cho hướng dẫn này.
+
+### 3. Tạo môi trường và cài Kokoro — làm lần đầu
+
+Tạo môi trường riêng, không cài thư viện vào Python dùng cho dự án khác:
+
+```powershell
+py -3.11 -m venv .venv-kokoro
+```
+
+Kiểm tra môi trường vừa tạo:
+
+```powershell
+.\.venv-kokoro\Scripts\python.exe --version
+```
+
+Cài thư viện:
+
+```powershell
+.\.venv-kokoro\Scripts\python.exe -m pip install --upgrade pip
+```
+
+```powershell
+.\.venv-kokoro\Scripts\python.exe -m pip install -r requirements/kokoro.txt
+```
+
+Tải model:
+
+```powershell
+.\.venv-kokoro\Scripts\python.exe -m pion_audio.download
+```
+
+Chờ đến khi hiện **“Model đã sẵn sàng”**. Lần đầu tải thư viện và khoảng 350–400 MB model/giọng/config từ upstream; cần internet và dung lượng trống cho cả thư viện lẫn model. Không cần Azure key, tài khoản Hugging Face hoặc GPU. Kokoro có thể tạo audio offline sau khi đã tải đủ dữ liệu.
+
+Không cần chạy `Activate.ps1`; gọi trực tiếp `python.exe` của môi trường như trên giúp CMD và PowerShell đều dùng đúng Python.
+
+### 4. Mở giao diện và nghe thử
+
+```powershell
+.\.venv-kokoro\Scripts\python.exe -m pion_audio.server
+```
+
+Trình duyệt sẽ mở **http://127.0.0.1:8765**. Nếu chưa tự mở, nhập địa chỉ đó vào trình duyệt. Không dùng Live Server để mở `web/index.html`; giao diện cần Python server để tạo và phát audio.
+
+1. Chọn model **Kokoro**.
+2. Giữ giọng **`zf_001`**, tốc độ **1.0**.
+3. Nhấn **Tạo / tiếp tục 20 mẫu**.
+4. Chờ xử lý xong, nghe từng file trong cột Kokoro và chọn **Đạt / Cần thay / Để sau**.
+
+Cột MeloTTS chưa có audio là bình thường nếu chưa cài hoặc chạy model đó. Trạng thái tạo thành công chỉ xác nhận đã có file, không thay cho việc nghe duyệt phát âm.
+
+Giữ terminal đang chạy trong lúc sử dụng. Khi cần dừng batch, bấm **Dừng sau mẫu hiện tại**, chờ hoàn tất rồi nhấn Ctrl+C tại terminal để đóng server. Nếu cổng 8765 bận:
+
+```powershell
+.\.venv-kokoro\Scripts\python.exe -m pion_audio.server --port 8766
+```
+
+Sau đó mở http://127.0.0.1:8766.
+
+### 5. Những lần mở tiếp theo
+
+Chỉ cần mở terminal tại thư mục dự án và chạy:
+
+```powershell
+.\.venv-kokoro\Scripts\python.exe -m pion_audio.server
+```
+
+Không cần tạo lại môi trường, cài thư viện hoặc tải model mỗi lần mở. Các file đã có được dùng lại khi nội dung, cách đọc và cấu hình không đổi.
+
+### Lưu ý về các script có sẵn
+
+**`scripts/setup-kokoro.ps1`, `scripts/start.ps1` và `start.cmd` hiện gọi cố định Python 3.12.** Nếu máy chỉ có 3.11, hãy dùng các lệnh trực tiếp ở trên; chưa dùng các script này. README này cập nhật hướng dẫn, không thay đổi nội dung script.
+
+Nếu máy có Python 3.12 x64 và muốn dùng script cài:
+
+```powershell
 powershell -ExecutionPolicy Bypass -File .\scripts\setup-kokoro.ps1
 ```
 
-Lệnh cài tải thư viện và khoảng 350 MB model/giọng/config từ nguồn upstream. Cần internet khi cài; Kokoro có thể tạo audio offline sau khi đã tải đủ dữ liệu. Không cần Azure key, tài khoản Hugging Face hoặc GPU.
+Sau khi cài xong, vẫn có thể mở giao diện bằng lệnh `.\.venv-kokoro\Scripts\python.exe -m pion_audio.server`.
 
-### 2. Mở giao diện
+### Lỗi thường gặp
+
+| Hiện tượng | Cách xử lý |
+|---|---|
+| `No suitable Python runtime found` | Phiên bản được gọi chưa có hoặc launcher chưa nhận. Chạy `py -0p`, dùng đúng 3.11/3.12 x64 đã cài. |
+| `Unknown option` khi chạy `py -version` | Dùng `py --version` với hai dấu `-`. |
+| Rất nhiều dòng `import ...`, xuất hiện `>>>` | Đã chạy `python -v`. Nhập `exit()`, rồi dùng `python --version`. |
+| Không tìm thấy `.venv-kokoro\Scripts\python.exe` | Kiểm tra đang ở đúng thư mục và bước tạo môi trường đã thành công. |
+| `No module named pion_audio` | Chạy từ thư mục gốc `audio-tools-local`, không từ `scripts`, `web` hoặc `pion_audio`. |
+| `No module named kokoro_onnx`, `misaki` hoặc `soundfile` | Chạy lại lệnh cài `requirements/kokoro.txt` bằng đúng `.venv-kokoro\Scripts\python.exe`. |
+| Báo thiếu model / chưa tải model | Chạy lại `.\.venv-kokoro\Scripts\python.exe -m pion_audio.download`. Chỉ thêm `--force` khi cần tải lại file lỗi. |
+| Không mở được trang local | Giữ Python server đang chạy; kiểm tra địa chỉ và cổng được in trong terminal. |
+| Batch báo lỗi | Mở **Nhật ký xử lý**, xem lỗi của mẫu. Gửi các dòng cuối log để xác định nguyên nhân, không cần gửi toàn bộ nhật ký cài đặt. |
+
+### 6. So sánh MeloTTS (tùy chọn, sau khi Kokoro đã chạy)
+
+MeloTTS cần môi trường riêng. Kiểm tra máy đã có **Python 3.10 x64** và **Git** trước khi chạy script dưới đây. Nếu chưa có, cài thêm; không dùng môi trường Kokoro để cài Melo.
 
 ```powershell
-powershell -ExecutionPolicy Bypass -File .\scripts\start.ps1
+py -3.10 -c "import sys, struct; print(sys.version); print('Architecture:', struct.calcsize('P') * 8, 'bit')"
 ```
-
-Hoặc mở `start.cmd`. Trình duyệt mở **http://127.0.0.1:8765**. Chọn **Kokoro**, giọng **zf_001**, tốc độ **1.0**, nhấn **Tạo / tiếp tục 20 mẫu**.
-
-Giữ cửa sổ terminal trong lúc tạo. Giao diện chỉ chạy loopback trên máy bạn, không phải website cần deploy. Nếu cổng bận: `py -3.12 -m pion_audio.server --port 8766`.
-
-### 3. So sánh MeloTTS (tùy chọn)
 
 ```powershell
 powershell -ExecutionPolicy Bypass -File .\scripts\setup-melo.ps1
@@ -73,7 +184,7 @@ Pinyin là metadata để đối chiếu và tách cache, **không phải lệnh
 python3.12 -m venv .venv-kokoro
 .venv-kokoro/bin/python -m pip install -r requirements/kokoro.txt
 .venv-kokoro/bin/python -m pion_audio.download
-python3.12 -m pion_audio.server
+.venv-kokoro/bin/python -m pion_audio.server
 ```
 
 CLI không cần mở giao diện:
@@ -87,8 +198,16 @@ Không chạy CLI và giao diện tạo batch cùng lúc vào một thư mục o
 
 ## Kiểm tra
 
+Windows:
+
+```powershell
+.\.venv-kokoro\Scripts\python.exe -m unittest discover -s tests -v
+```
+
+Linux / macOS:
+
 ```bash
-python -m unittest discover -s tests -v
+.venv-kokoro/bin/python -m unittest discover -s tests -v
 ```
 
 Các test dùng WAV giả lập để kiểm tra resume, cache, validation, review và HTTP local; không dùng giọng giả làm audio mẫu. Kiểm tra model thật được ghi riêng trong `VALIDATION.md`.
